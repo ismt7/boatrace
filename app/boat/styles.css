@@ -1,0 +1,103 @@
+/* styles.css */
+table {
+  width: 100%;
+  max-width: 1000px;
+  border-collapse: collapse;
+}
+
+.boat1 {
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  text-align: center;
+}
+
+.boat2 {
+  background-color: black;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+.boat3 {
+  background-color: red;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+.boat4 {
+  background-color: blue;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+.boat5 {
+  background-color: yellow;
+  color: black;
+  font-weight: bold;
+  text-align: center;
+}
+
+.boat6 {
+  background-color: green;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+th,
+td {
+  padding: 2px 5px;
+  border: 1px solid #e5e7eb;
+  text-align: right;
+}
+
+th {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
+
+.select-dropdown {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.highlight {
+  padding: 0px 5px;
+  background-color: #ffcc00;
+  font-weight: bold;
+  color: red;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.fixed-menu-bar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.content {
+  padding-top: 50px; /* MenuBarの高さに合わせて調整 */
+  margin: 20px; /* ページ全体にマージンを追加 */
+}
