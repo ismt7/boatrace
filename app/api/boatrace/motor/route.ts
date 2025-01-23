@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         );
       }
       const today = dayjs().format("YYYY-MM-DD");
-      await saveMotorIndexData(motorIndex);
+      await saveMotorIndexData(jcd, hd, motorIndex);
       return NextResponse.json({ date: today, motorIndex });
     })
     .catch((error) => {
@@ -87,22 +87,35 @@ async function fetchMotorIndex(params: MotorIndexRequestParams) {
   }
 }
 
-async function saveMotorIndexData(motorIndex: MotorIndex[]) {
+async function saveMotorIndexData(
+  jcd: number,
+  hd: string,
+  motorIndex: MotorIndex[]
+) {
   for (const motor of motorIndex) {
     const { toban, motorNumber, quinellaPairRate, preRaceInspectionTime } =
       motor;
 
     await prisma.motor.upsert({
       where: {
-        toban_motorNumber: { toban, motorNumber },
+        jcd_raceDate_toban_motorNumber: {
+          jcd,
+          raceDate: hd,
+          toban,
+          motorNumber,
+        },
       },
       update: {
+        jcd,
+        raceDate: hd,
         toban,
         motorNumber,
         quinellaPairRate,
         preRaceInspectionTime,
       },
       create: {
+        jcd,
+        raceDate: hd,
         toban,
         motorNumber,
         quinellaPairRate,

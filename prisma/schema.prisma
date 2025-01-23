@@ -140,6 +140,8 @@ model Payout {
 
 model Motor {
   id                    Int      @id @default(autoincrement())
+  jcd                   Int
+  raceDate              String
   toban                 Int
   motorNumber           Int
   quinellaPairRate      Float
@@ -148,5 +150,5 @@ model Motor {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  @@unique([toban, motorNumber])
+  @@unique([jcd, raceDate, toban, motorNumber])
 }

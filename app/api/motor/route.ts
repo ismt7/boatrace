@@ -14,15 +14,17 @@ const prisma = new PrismaClient({
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  const jcd = searchParams.get("jcd");
+  const hd = searchParams.get("hd");
 
   try {
-    const motors = id
-      ? await prisma.motor.findMany({
-          where: { id: Number(id) },
-          orderBy: { quinellaPairRate: "desc" },
-        })
-      : await prisma.motor.findMany({ orderBy: { quinellaPairRate: "desc" } });
+    const motors = await prisma.motor.findMany({
+      where: {
+        ...(jcd && { jcd: Number(jcd) }),
+        ...(hd && { raceDate: hd }),
+      },
+      orderBy: { quinellaPairRate: "desc" },
+    });
     return NextResponse.json(motors, { status: 200 });
   } catch (error) {
     console.error("Error fetching motors:", error);
