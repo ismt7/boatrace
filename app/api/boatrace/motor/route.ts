@@ -37,21 +37,27 @@ export async function GET(request: NextRequest) {
 
   const jcd = parseInt(jcdParam, 10);
 
-  return await fetchMotorIndex({ jcd, hd })
-    .then(async (motorIndex) => {
-      if (!motorIndex) {
-        return NextResponse.json(
-          { error: "No motor index data found" },
-          { status: 404 }
-        );
-      }
-      const today = dayjs().format("YYYY-MM-DD");
-      await saveMotorIndexData(jcd, hd, motorIndex);
-      return NextResponse.json({ date: today, motorIndex });
-    })
-    .catch((error) => {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    });
+  const motorIndex = await fetchMotorIndex({ jcd, hd });
+
+  if (!motorIndex) {
+    return NextResponse.json(
+      { error: "No motor index data found" },
+      { status: 404 }
+    );
+  }
+
+  const today = dayjs().format("YYYY-MM-DD");
+  await saveMotorIndexData(jcd, hd, motorIndex);
+
+  const toban = motorIndex.map((motor) => motor.toban);
+  const racerSearchPromises = toban.map((toban) =>
+    axios.get(`/api/boatrace/racersearch?toban=${toban}`)
+  );
+
+  const racerSearchResults = await Promise.all(racerSearchPromises);
+  const racerData = racerSearchResults.map((result) => result.data);
+
+  return NextResponse.json({ date: today, motorIndex, racerData });
 }
 
 async function fetchMotorIndex(params: MotorIndexRequestParams) {
