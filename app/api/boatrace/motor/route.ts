@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 export interface MotorIndex {
   toban: number;
-  moterNumber: number;
+  motorNumber: number;
   quinellaPairRate: number;
   preRaceInspectionTime: number;
 }
@@ -89,22 +89,22 @@ async function fetchMotorIndex(params: MotorIndexRequestParams) {
 
 async function saveMotorIndexData(motorIndex: MotorIndex[]) {
   for (const motor of motorIndex) {
-    const { toban, moterNumber, quinellaPairRate, preRaceInspectionTime } =
+    const { toban, motorNumber, quinellaPairRate, preRaceInspectionTime } =
       motor;
 
-    await prisma.moter.upsert({
+    await prisma.motor.upsert({
       where: {
-        toban_moterNumber: { toban, moterNumber },
+        toban_motorNumber: { toban, motorNumber },
       },
       update: {
         toban,
-        moterNumber,
+        motorNumber,
         quinellaPairRate,
         preRaceInspectionTime,
       },
       create: {
         toban,
-        moterNumber,
+        motorNumber,
         quinellaPairRate,
         preRaceInspectionTime,
       },
@@ -119,7 +119,7 @@ function extractMotorIndex(elements: NodeListOf<Element>): MotorIndex[] {
     // 登録番号
     const toban = parseInt(columns[1].textContent?.trim() || "0", 10);
     // モーター番号
-    const moterNumber = parseInt(columns[4].textContent?.trim() || "0", 10);
+    const motorNumber = parseInt(columns[4].textContent?.trim() || "0", 10);
 
     // 2連率
     const quinellaPairRate = (() => {
@@ -132,6 +132,11 @@ function extractMotorIndex(elements: NodeListOf<Element>): MotorIndex[] {
       columns[8].textContent?.trim() || "0.00"
     );
 
-    return { toban, moterNumber, quinellaPairRate, preRaceInspectionTime };
+    return {
+      toban,
+      motorNumber,
+      quinellaPairRate,
+      preRaceInspectionTime,
+    };
   });
 }

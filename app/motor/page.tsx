@@ -5,7 +5,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { Moter } from "../lib/prisma";
+import { Motor } from "../lib/prisma";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -22,24 +22,24 @@ const TableHeader = () => (
   </thead>
 );
 
-const TableBody = ({ moters }: { moters: Moter[] }) => (
+const TableBody = ({ motors }: { motors: Motor[] }) => (
   <tbody>
-    {moters.length === 0 ? (
+    {motors.length === 0 ? (
       <tr>
         <td colSpan={4} className="border px-4 py-2 text-center">
           表示するデータがありません
         </td>
       </tr>
     ) : (
-      moters.map((moter) => (
-        <tr key={moter.id}>
-          <td className="border px-4 py-2 text-center">{moter.toban}</td>
-          <td className="border px-4 py-2 text-center">{moter.moterNumber}</td>
+      motors.map((motor) => (
+        <tr key={motor.id}>
+          <td className="border px-4 py-2 text-center">{motor.toban}</td>
+          <td className="border px-4 py-2 text-center">{motor.motorNumber}</td>
           <td className="border px-4 py-2 text-center">
-            {`${(moter.quinellaPairRate * 100).toFixed(2)}%`}
+            {`${(motor.quinellaPairRate * 100).toFixed(2)}%`}
           </td>
           <td className="border px-4 py-2 text-center">
-            {moter.preRaceInspectionTime.toFixed(2)}
+            {motor.preRaceInspectionTime.toFixed(2)}
           </td>
         </tr>
       ))
@@ -48,22 +48,22 @@ const TableBody = ({ moters }: { moters: Moter[] }) => (
 );
 
 const MotorPage = () => {
-  const [moters, setMoters] = useState<Moter[]>([]);
+  const [motors, setMotors] = useState<Motor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMoters = async () => {
+    const fetchMotors = async () => {
       try {
-        const response = await axios.get("/api/moter");
-        setMoters(response.data);
+        const response = await axios.get("/api/motor");
+        setMotors(response.data);
       } catch (error) {
-        console.error("Error fetching moters:", error);
+        console.error("Error fetching motors:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMoters();
+    fetchMotors();
   }, []);
 
   if (loading) {
@@ -75,7 +75,7 @@ const MotorPage = () => {
       <h1 className="text-2xl font-bold mb-4">モーター情報一覧</h1>
       <table className="w-full max-w-4xl bg-white table-fixed mx-auto">
         <TableHeader />
-        <TableBody moters={moters} />
+        <TableBody motors={motors} />
       </table>
     </div>
   );
