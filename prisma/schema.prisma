@@ -167,3 +167,18 @@ model RacerCourseTrifectaRate {
 
   @@unique([toban])
 }
+
+model RacerCourseAverageStartTiming {
+  id           Int      @id @default(autoincrement())
+  toban        Int
+  firstTiming  Float
+  secondTiming Float
+  thirdTiming  Float
+  fourthTiming Float
+  fifthTiming  Float
+  sixthTiming  Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([toban])
+}

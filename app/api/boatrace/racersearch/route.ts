@@ -71,6 +71,27 @@ async function fetchRacerStats(toBan: string): Promise<RacerStats> {
     },
   });
 
+  await prisma.racerCourseAverageStartTiming.upsert({
+    where: { toban: parseInt(toBan) },
+    update: {
+      firstTiming: courseAverageStartTiming[0],
+      secondTiming: courseAverageStartTiming[1],
+      thirdTiming: courseAverageStartTiming[2],
+      fourthTiming: courseAverageStartTiming[3],
+      fifthTiming: courseAverageStartTiming[4],
+      sixthTiming: courseAverageStartTiming[5],
+    },
+    create: {
+      toban: parseInt(toBan),
+      firstTiming: courseAverageStartTiming[0],
+      secondTiming: courseAverageStartTiming[1],
+      thirdTiming: courseAverageStartTiming[2],
+      fourthTiming: courseAverageStartTiming[3],
+      fifthTiming: courseAverageStartTiming[4],
+      sixthTiming: courseAverageStartTiming[5],
+    },
+  });
+
   return { racerNumber: toBan, courseAverageStartTiming, courseTrifectaRate };
 }
 
