@@ -33,6 +33,10 @@ export function generateCombinations(line: string): string[] {
       /^([1-6]{2,4})(=|-)([1-6])(-|=)([1-6])$/,
       /^([1-6])(=|-)([1-6]{2,4})(-|=)([1-6])$/,
       /^([1-6])(=|-)([1-6])(-|=)([1-6]{2,4})$/,
+      /^([1-6]{2,4})(=|-)([1-6]{2,4})(-|=)([1-6])$/,
+      /^([1-6]{2,4})(=|-)([1-6])(-|=)([1-6]{2,4})$/,
+      /^([1-6])(=|-)([1-6]{2,6})(-|=)([1-6]{2,6})$/,
+      /^([1-6]{2,4})(=|-)([1-6]{2,4})(-|=)([1-6]{2,4})$/,
     ];
 
     const pattern = patterns.find((pattern) => pattern.test(line));
@@ -50,20 +54,37 @@ export function generateCombinations(line: string): string[] {
         const thirdNumbers = third.split("").map(Number) as number[];
 
         const combinations = firstNumbers.flatMap((firstNumber) =>
-          secondNumbers.flatMap((secondNumber) =>
-            thirdNumbers.map(
-              (thirdNumber) => `${firstNumber}-${secondNumber}-${thirdNumber}`
+          secondNumbers
+            .filter((secondNumber) => secondNumber !== firstNumber)
+            .flatMap((secondNumber) =>
+              thirdNumbers
+                .filter(
+                  (thirdNumber) =>
+                    thirdNumber !== firstNumber && thirdNumber !== secondNumber
+                )
+                .map(
+                  (thirdNumber) =>
+                    `${firstNumber}-${secondNumber}-${thirdNumber}`
+                )
             )
-          )
         );
 
         combinations.push(
           ...secondNumbers.flatMap((secondNumber) =>
-            firstNumbers.flatMap((firstNumber) =>
-              thirdNumbers.map(
-                (thirdNumber) => `${secondNumber}-${firstNumber}-${thirdNumber}`
+            firstNumbers
+              .filter((firstNumber) => firstNumber !== secondNumber)
+              .flatMap((firstNumber) =>
+                thirdNumbers
+                  .filter(
+                    (thirdNumber) =>
+                      thirdNumber !== firstNumber &&
+                      thirdNumber !== secondNumber
+                  )
+                  .map(
+                    (thirdNumber) =>
+                      `${secondNumber}-${firstNumber}-${thirdNumber}`
+                  )
               )
-            )
           )
         );
 
@@ -76,21 +97,37 @@ export function generateCombinations(line: string): string[] {
         const thirdNumbers = third.split("").map(Number);
 
         const combinations = firstNumbers.flatMap((firstNumber) =>
-          secondNumbers.flatMap((secondNumber) =>
-            thirdNumbers.map(
-              (thirdNumber) => `${firstNumber}-${secondNumber}-${thirdNumber}`
+          secondNumbers
+            .filter((secondNumber) => secondNumber !== firstNumber)
+            .flatMap((secondNumber) =>
+              thirdNumbers
+                .filter(
+                  (thirdNumber) =>
+                    thirdNumber !== firstNumber && thirdNumber !== secondNumber
+                )
+                .map(
+                  (thirdNumber) =>
+                    `${firstNumber}-${secondNumber}-${thirdNumber}`
+                )
             )
-          )
         );
 
         combinations.push(
           ...firstNumbers.flatMap((firstNumber) =>
-            thirdNumbers.flatMap((thirdNumber) =>
-              secondNumbers.map(
-                (secondNumber) =>
-                  `${firstNumber}-${thirdNumber}-${secondNumber}`
+            thirdNumbers
+              .filter((thirdNumber) => thirdNumber !== firstNumber)
+              .flatMap((thirdNumber) =>
+                secondNumbers
+                  .filter(
+                    (secondNumber) =>
+                      secondNumber !== firstNumber &&
+                      secondNumber !== thirdNumber
+                  )
+                  .map(
+                    (secondNumber) =>
+                      `${firstNumber}-${thirdNumber}-${secondNumber}`
+                  )
               )
-            )
           )
         );
 
@@ -127,10 +164,15 @@ export function generateCombinations(line: string): string[] {
     }
   }
 
-  const match = line.match(/^([1-6])(=|-)([1-6])(-|=)([1-6])$/);
+  const match = line.match(/^([1-6])(-|=)([1-6])(-|=)([1-6])$/);
   if (match) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, first, split1, second, split2, third] = match;
+
+    if (first === second || second === third || third === first) {
+      return [];
+    }
+
     if (split1 === "=") {
       return [`${first}-${second}-${third}`, `${second}-${first}-${third}`];
     }

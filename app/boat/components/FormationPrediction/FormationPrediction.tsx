@@ -7,7 +7,8 @@ import { TrifectaOdds } from "../Odds/Odds";
 import { generateCombinations } from "../generateCombinations";
 import PatternButtons from "./PatternButtons";
 import { predefinedPatterns } from "./patterns";
-import BoatExpectedResults from "./BoatExpectedResults"; // 新しいインポート
+import BoatExpectedResults from "./BoatExpectedResults";
+import UnselectedPredictionsTable from "./UnselectedPredictionsTable"; // 新しいインポーネント
 
 const groupedPatterns = predefinedPatterns.reduce(
   (acc, pattern) => {
@@ -271,6 +272,7 @@ export function FormationPrediction({
           rows={5}
           style={{ whiteSpace: "pre-wrap" }}
         />
+        <UnselectedPredictionsTable predictions={predictions} />
         <PatternButtons
           groupedPatterns={groupedPatterns}
           handlePatternButtonClick={handlePatternButtonClick}
@@ -381,23 +383,25 @@ export function FormationPrediction({
           </table>
         </div>
         {predictions.length > 0 && (
-          <BoatExpectedResults
-            totalOdds={totalOdds}
-            arbitrageRate={arbitrageRate}
-            formatNumber={formatNumber}
-            betDistribution={betDistribution}
-            predictions={predictions}
-            predictionOdds={predictionOdds}
-            calculatePayout={calculatePayout}
-            suggestions={suggestions}
-            setBetDistribution={setBetDistribution}
-            setPredictions={setPredictions}
-            setPredictionOdds={setPredictionOdds}
-            setTotalOdds={setTotalOdds}
-            setArbitrageRate={setArbitrageRate}
-            minRecoveryRate={minRecoveryRate}
-            setMinRecoveryRate={setMinRecoveryRate}
-          />
+          <>
+            <BoatExpectedResults
+              totalOdds={totalOdds}
+              arbitrageRate={arbitrageRate}
+              formatNumber={formatNumber}
+              betDistribution={betDistribution}
+              predictions={predictions}
+              predictionOdds={predictionOdds}
+              calculatePayout={calculatePayout}
+              suggestions={suggestions}
+              setBetDistribution={setBetDistribution}
+              setPredictions={setPredictions}
+              setPredictionOdds={setPredictionOdds}
+              setTotalOdds={setTotalOdds}
+              setArbitrageRate={setArbitrageRate}
+              minRecoveryRate={minRecoveryRate}
+              setMinRecoveryRate={setMinRecoveryRate}
+            />
+          </>
         )}
       </div>
     </>
