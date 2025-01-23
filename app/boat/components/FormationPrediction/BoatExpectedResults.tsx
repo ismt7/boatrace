@@ -43,7 +43,6 @@ function BoatExpectedResults({
   setMinRecoveryRate: React.Dispatch<React.SetStateAction<number>>;
 }): React.ReactNode {
   const [desiredPayout, setDesiredPayout] = useState<number>(0);
-  const [investmentData, setInvestmentData] = useState<number[]>([]);
   const chartRef = useRef<SVGSVGElement>(null);
 
   const handleBetChange = (prediction: string, newBet: number) => {
@@ -113,23 +112,6 @@ function BoatExpectedResults({
     setBetDistribution(newBetDistribution);
   };
 
-  const calculateInvestmentData = () => {
-    const data = [];
-    for (let payout = 100; payout <= 10000; payout += 100) {
-      const newBetDistribution = { ...betDistribution };
-      predictions.forEach((prediction) => {
-        const odds = predictionOdds[prediction];
-        let bet = 1;
-        while (calculatePayout(odds, bet) < payout) {
-          bet++;
-        }
-        newBetDistribution[prediction] = bet;
-      });
-      data.push(calculateTotalInvestment(newBetDistribution));
-    }
-    setInvestmentData(data);
-  };
-
   const calculateInvestmentRange = (desiredPayout: number) => {
     const range = [];
     for (
@@ -152,20 +134,6 @@ function BoatExpectedResults({
       });
     }
     return range;
-  };
-
-  useEffect(() => {
-    calculateInvestmentData();
-  }, [betDistribution, predictions, predictionOdds, desiredPayout]);
-
-  const calculateRecoveryRates = (odds: number) => {
-    const rates = [];
-    for (let bet = 1; bet <= 10; bet++) {
-      const payout = calculatePayout(odds, bet);
-      const recoveryRate = (payout / (bet * 100)) * 100;
-      rates.push(recoveryRate);
-    }
-    return rates;
   };
 
   useEffect(() => {

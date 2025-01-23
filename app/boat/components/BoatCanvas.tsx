@@ -219,7 +219,6 @@ export const BoatCanvas: React.FC = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boatPositions.length, mousePosition]);
 
   const drawIsoscelesTriangle = (

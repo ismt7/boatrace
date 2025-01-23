@@ -1,13 +1,29 @@
 import dayjs from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef, memo } from "react";
 import { OddsTable } from "../OddsTable/OddsTable";
 import { OddsUpdateButton } from "../OddsUpdateButton";
-import { fetchOdds } from "../../lib/fetchOdds";
 import { BoatCanvas } from "../BoatCanvas";
 import FixedYouTube from "../FixedYouTube";
 import PredictionPanel from "../PredictionPanel/PredictionPanel";
 import "./Odds.module.css";
+import { DoubleOdds } from "@/app/api/boatrace/odds/route";
+import { BoatSimulation } from "../BoatSimulation/BoatSimulation";
+import NormalDistributionChart from "../OddsTable/NormalDistributionChart";
+import RaceInfoTable from "../RaceInfoTable";
+import TrifectaBoxOddsCalculator from "../TrifectaBoxOddsCalculator";
+import CombinationOddsCalculator from "../CombinationOddsCalculator/CombinationOddsCalculator";
+import TopOddsList from "../TopOddsList";
+import DoubleOddsRanking from "../DoubleOddsRanking";
+import CombinedOddsRanking from "../CombinedOddsRanking";
+import {
+  fetchAndSetOdds,
+  generateIframeUrls,
+  handleBeforeUnload,
+  updateURL,
+} from "./OddsHelpers";
+import { RaceSelector } from "./RaceSelector";
+import { IframeSection } from "./IframeSection";
 
 export interface TrifectaOdds {
   [key: number]: {
@@ -17,41 +33,20 @@ export interface TrifectaOdds {
   };
 }
 
-export const raceCourses = [
-  { id: 1, name: "桐生" },
-  { id: 2, name: "戸田" },
-  { id: 3, name: "江戸川" },
-  { id: 4, name: "平和島" },
-  { id: 5, name: "多摩川" },
-  { id: 6, name: "浜名湖" },
-  { id: 7, name: "蒲郡" },
-  { id: 8, name: "常滑" },
-  { id: 9, name: "津" },
-  { id: 10, name: "三国" },
-  { id: 11, name: "びわこ" },
-  { id: 12, name: "住之江" },
-  { id: 13, name: "尼崎" },
-  { id: 14, name: "鳴門" },
-  { id: 15, name: "丸亀" },
-  { id: 16, name: "児島" },
-  { id: 17, name: "宮島" },
-  { id: 18, name: "徳山" },
-  { id: 19, name: "下関" },
-  { id: 20, name: "若松" },
-  { id: 21, name: "芦屋" },
-  { id: 22, name: "福岡" },
-  { id: 23, name: "唐津" },
-  { id: 24, name: "大村" },
-];
-
-export default function Odds({
+export default memo(function Odds({
   youtubeUrl,
   setOdds,
   odds,
+  doubleOdds,
+  setDoubleOdds,
+  autoPlay,
 }: {
   youtubeUrl: string;
   setOdds: React.Dispatch<React.SetStateAction<TrifectaOdds | null>>;
   odds: TrifectaOdds | null;
+  doubleOdds: DoubleOdds | null;
+  setDoubleOdds: React.Dispatch<React.SetStateAction<DoubleOdds | null>>;
+  autoPlay: boolean;
 }): React.ReactNode {
   const [oddsUpdatedTime, setOddsUpdatedTime] = useState<string | null>(null);
   const [selectedRace, setSelectedRace] = useState<number>(1);
@@ -59,44 +54,25 @@ export default function Odds({
   const [selectedDate, setSelectedDate] = useState<string>(
     dayjs().format("YYYY-MM-DD")
   );
-  const [prediction, setPrediction] = useState<string>("");
-
   const [tenjiSrc, setTenjiSrc] = useState<string>("");
   const [replaySrc, setReplaySrc] = useState<string>("");
-
-  useEffect(() => {
-    const storedPrediction = localStorage.getItem("prediction");
-    if (storedPrediction) {
-      setPrediction(storedPrediction);
-    }
-  }, []);
-
-  const handlePredictionChange = (
-    event: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    const newPrediction = event.target.value;
-    setPrediction(newPrediction);
-    localStorage.setItem("prediction", newPrediction);
-  };
+  const [loading, setLoading] = useState<boolean>(true);
+  const [countdown, setCountdown] = useState<number>(60);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const countdownInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      localStorage.removeItem("odds");
-      localStorage.removeItem("oddsUpdatedTime");
-      localStorage.removeItem("prediction");
-    };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
-
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
   useEffect(() => {
+    if (!searchParams) return;
+
     const rno = Number(searchParams.get("rno")) || 1;
     const jcd = Number(searchParams.get("jcd")) || 22;
     const hd = searchParams.get("hd") || dayjs().format("YYYY-MM-DD");
@@ -104,148 +80,200 @@ export default function Odds({
     setSelectedCourse(jcd);
     setSelectedDate(hd);
 
-    const storedOdds = localStorage.getItem("odds");
-    const storedOddsUpdatedTime = localStorage.getItem("oddsUpdatedTime");
-
-    if (storedOdds && storedOddsUpdatedTime) {
-      const parsedOdds = JSON.parse(storedOdds);
-      setOdds(parsedOdds);
-      setOddsUpdatedTime(storedOddsUpdatedTime);
-    } else {
-      fetchOdds(rno, jcd, hd).then((res) => {
-        setOdds(res.odds);
-        setOddsUpdatedTime(res.oddsUpdatedTime);
-        localStorage.setItem("odds", JSON.stringify(res.odds));
-        localStorage.setItem("oddsUpdatedTime", res.oddsUpdatedTime);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+    fetchAndSetOdds(
+      rno,
+      jcd,
+      hd,
+      setOdds,
+      setDoubleOdds,
+      setOddsUpdatedTime,
+      setLoading
+    );
+  }, [searchParams, setOdds, setDoubleOdds]);
 
   useEffect(() => {
-    const tenjiUrl = `https://live.boatcast.jp/boatcastsp/streamer/streamer.php?tenji=1&jo=${selectedCourse}&race=${selectedRace}&date=${selectedDate}&m=1`;
-    const replayUrl = `https://live.boatcast.jp/boatcastsp/streamer/streamer.php?jo=${selectedCourse}&race=${selectedRace}&date=${selectedDate}&m=1`;
+    const { tenjiUrl, replayUrl } = generateIframeUrls(
+      selectedCourse,
+      selectedRace,
+      selectedDate
+    );
     setTenjiSrc(tenjiUrl);
     setReplaySrc(replayUrl);
   }, [selectedCourse, selectedRace, selectedDate]);
 
-  const handleRaceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const rno = Number(event.target.value);
-    setSelectedRace(rno);
-    updateURL(rno, selectedCourse, selectedDate);
-  };
-
-  const handleCourseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const jcd = Number(event.target.value);
-    setSelectedCourse(jcd);
-    updateURL(selectedRace, jcd, selectedDate);
-  };
-
-  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const hd = event.target.value;
-    setSelectedDate(hd);
-    updateURL(selectedRace, selectedCourse, hd);
-  };
-
-  const handleRefresh = () => {
-    setOdds(null);
-    fetchOdds(selectedRace, selectedCourse, selectedDate).then((res) => {
-      setOdds(res.odds);
-      setOddsUpdatedTime(res.oddsUpdatedTime);
-      localStorage.setItem("odds", JSON.stringify(res.odds));
-      localStorage.setItem("oddsUpdatedTime", res.oddsUpdatedTime);
+  const handleRefresh = useCallback(() => {
+    setLoading(true);
+    fetchAndSetOdds(
+      selectedRace,
+      selectedCourse,
+      selectedDate,
+      setOdds,
+      setDoubleOdds,
+      setOddsUpdatedTime,
+      setLoading
+    ).finally(() => {
+      setLoading(false);
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+      }
+      countdownInterval.current = setInterval(() => {
+        setCountdown((prevCountdown) => {
+          if (prevCountdown <= 1) {
+            handleRefresh();
+            return 60;
+          }
+          return prevCountdown - 1;
+        });
+      }, 1000);
     });
-  };
+  }, [
+    selectedRace,
+    selectedCourse,
+    selectedDate,
+    setOdds,
+    setDoubleOdds,
+    setOddsUpdatedTime,
+    setLoading,
+  ]);
 
-  const handleIframeRefresh = () => {
-    const tenjiUrl = `https://live.boatcast.jp/boatcastsp/streamer/streamer.php?tenji=1&jo=${selectedCourse}&race=${selectedRace}&date=${selectedDate}&m=1`;
-    const replayUrl = `https://live.boatcast.jp/boatcastsp/streamer/streamer.php?jo=${selectedCourse}&race=${selectedRace}&date=${selectedDate}&m=1`;
+  useEffect(() => {
+    if (oddsUpdatedTime === null || oddsUpdatedTime === "") {
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+      }
+    }
+  }, [oddsUpdatedTime]);
+
+  useEffect(() => {
+    countdownInterval.current = setInterval(() => {
+      setCountdown((prevCountdown) => {
+        if (prevCountdown <= 1) {
+          handleRefresh();
+          return 60;
+        }
+        return prevCountdown - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+      }
+    };
+  }, [handleRefresh]);
+
+  const handleRaceChange = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const rno = Number(event.currentTarget.value);
+      setSelectedRace(rno);
+      updateURL(router, rno, selectedCourse, selectedDate);
+      handleRefresh();
+    },
+    [router, selectedCourse, selectedDate, handleRefresh]
+  );
+
+  const handleCourseChange = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const jcd = Number(event.currentTarget.value);
+      setSelectedCourse(jcd);
+      updateURL(router, selectedRace, jcd, selectedDate);
+      handleRefresh();
+    },
+    [router, selectedRace, selectedDate, handleRefresh]
+  );
+
+  const handleDateChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const hd = event.target.value;
+      setSelectedDate(hd);
+      updateURL(router, selectedRace, selectedCourse, hd);
+      handleRefresh();
+    },
+    [router, selectedRace, selectedCourse, handleRefresh]
+  );
+
+  const handleIframeRefresh = useCallback(() => {
+    const { tenjiUrl, replayUrl } = generateIframeUrls(
+      selectedCourse,
+      selectedRace,
+      selectedDate
+    );
     setTenjiSrc(tenjiUrl);
     setReplaySrc(replayUrl);
-  };
+  }, [selectedCourse, selectedRace, selectedDate]);
 
-  const updateURL = (rno: number, jcd: number, hd: string) => {
-    const params = new URLSearchParams();
-    params.set("rno", rno.toString());
-    params.set("jcd", jcd.toString());
-    params.set("hd", hd);
-    router.push(`?${params.toString()}`);
-  };
   return (
-    <div>
-      <div className="container flex">
-        <div className="left-side w-1/2 pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 max-w-xl">
-            <div>
-              <label htmlFor="course-select" className="block mb-2">
-                レース場:
-              </label>
-              <select
-                id="course-select"
-                className="select-dropdown w-full p-2 border border-gray-300 rounded"
-                value={selectedCourse}
-                onChange={handleCourseChange}
-              >
-                {raceCourses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="race-select" className="block mb-2">
-                レース番号:
-              </label>
-              <select
-                id="race-select"
-                className="select-dropdown w-full p-2 border border-gray-300 rounded"
-                value={selectedRace}
-                onChange={handleRaceChange}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {i + 1}R
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="date-select" className="block mb-2">
-                日付:
-              </label>
-              <input
-                type="date"
-                id="date-select"
-                value={selectedDate}
-                onChange={handleDateChange}
-                className="select-dropdown w-full p-2 border border-gray-300 rounded"
+    <div className="dashboard-container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="tile p-4 bg-white shadow-md rounded-md sm:col-span-1 lg:col-span-2">
+        <RaceSelector
+          selectedCourse={selectedCourse}
+          selectedRace={selectedRace}
+          selectedDate={selectedDate}
+          handleCourseChange={handleCourseChange}
+          handleRaceChange={handleRaceChange}
+          handleDateChange={handleDateChange}
+        />
+      </div>
+      <div className="tile p-4 bg-white shadow-md rounded-md">
+        <FixedYouTube videoUrl={youtubeUrl} autoPlay={autoPlay} />
+      </div>
+
+      {/* 予想メモ */}
+      <div className="tile p-4 bg-white shadow-md rounded-md">
+        <PredictionPanel odds={odds} doubleOdds={doubleOdds} />
+      </div>
+
+      <div className="tile p-4 bg-white shadow-md rounded-md md:col-span-2 lg:col-span-1">
+        <RaceInfoTable
+          rno={selectedRace}
+          jcd={selectedCourse}
+          hd={selectedDate}
+        />
+        {odds && doubleOdds && (
+          <>
+            <OddsUpdateButton handleRefresh={handleRefresh} />
+            {loading && <p>Loading...</p>}
+            <OddsTable
+              odds={odds}
+              doubleOdds={doubleOdds}
+              oddsUpdatedTime={oddsUpdatedTime}
+              countdown={countdown}
+            />
+          </>
+        )}
+      </div>
+      {odds && doubleOdds && (
+        <>
+          <div className="tile p-4 bg-white shadow-md rounded-md">
+            <div className="flex flex-row space-x-4">
+              <TopOddsList odds={odds} />
+              <DoubleOddsRanking doubleOdds={doubleOdds} />
+              <CombinedOddsRanking
+                trifectaOdds={odds}
+                doubleOdds={doubleOdds}
               />
             </div>
+            <NormalDistributionChart odds={odds} mean={1} stdDev={1} />
           </div>
-          <OddsUpdateButton handleRefresh={handleRefresh} />
-          {odds ? (
-            <OddsTable odds={odds} oddsUpdatedTime={oddsUpdatedTime} />
-          ) : (
-            <p>Loading...</p>
-          )}
-          <button
-            onClick={handleIframeRefresh}
-            className="refresh-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            リフレッシュ
-          </button>
-          <h2 className="text-lg font-bold mb-2">展示走行</h2>
-          <iframe src={tenjiSrc} width="700" height="450"></iframe>
-          <h2 className="text-lg font-bold mb-2">リプレイ</h2>
-          <iframe src={replaySrc} width="700" height="450"></iframe>
-          <FixedYouTube videoUrl={youtubeUrl} />
-        </div>
-        <div className="right-side w-1/2 pl-4">
-          <BoatCanvas />
-          <PredictionPanel />
-        </div>
+          <div className="tile p-4 bg-white shadow-md rounded-md">
+            <CombinationOddsCalculator odds={odds} />
+          </div>
+          <div className="tile p-4 bg-white shadow-md rounded-md">
+            <TrifectaBoxOddsCalculator odds={odds} />
+          </div>
+        </>
+      )}
+      <div className="tile p-4 bg-white shadow-md rounded-md">
+        <BoatCanvas />
+        <BoatSimulation />
+      </div>
+      <div className="tile p-4 bg-white shadow-md rounded-md">
+        <IframeSection
+          tenjiSrc={tenjiSrc}
+          replaySrc={replaySrc}
+          handleIframeRefresh={handleIframeRefresh}
+        />
       </div>
     </div>
   );
-}
+});
