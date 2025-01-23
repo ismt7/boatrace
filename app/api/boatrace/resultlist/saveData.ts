@@ -1,7 +1,5 @@
-import { PrismaClient } from "../../../lib/prisma";
-import { ResultList, Payout } from "./route";
-
-const prisma = new PrismaClient();
+import prisma from "../../../lib/prismaClient";
+import { Payout, ResultList } from "./route";
 
 export async function saveResultListData(
   jcd: number,
