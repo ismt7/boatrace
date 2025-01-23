@@ -26,7 +26,7 @@ const NavigationBar: React.FC = () => {
           </Link>
         </li>
         <li>
-          <Link href="/moter" className="text-white hover:underline">
+          <Link href="/motor" className="text-white hover:underline">
             モーター
           </Link>
         </li>
