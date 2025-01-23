@@ -17,17 +17,17 @@ export async function GET(request: NextRequest) {
   const id = searchParams.get("id");
 
   try {
-    const moters = id
-      ? await prisma.moter.findMany({
+    const motors = id
+      ? await prisma.motor.findMany({
           where: { id: Number(id) },
           orderBy: { quinellaPairRate: "desc" },
         })
-      : await prisma.moter.findMany({ orderBy: { quinellaPairRate: "desc" } });
-    return NextResponse.json(moters, { status: 200 });
+      : await prisma.motor.findMany({ orderBy: { quinellaPairRate: "desc" } });
+    return NextResponse.json(motors, { status: 200 });
   } catch (error) {
-    console.error("Error fetching moters:", error);
+    console.error("Error fetching motors:", error);
     return NextResponse.json(
-      { message: "Failed to fetch moters" },
+      { message: "Failed to fetch motors" },
       { status: 500 }
     );
   }
