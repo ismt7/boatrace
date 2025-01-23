@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../lib/prisma";
+import prisma from "@/app/lib/prismaClient";
 import dotenv from "dotenv";
 
 dotenv.config();
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
 
 export async function OPTIONS() {
   return NextResponse.json({}, { status: 200 });

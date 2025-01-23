@@ -1,4 +1,4 @@
-import prisma from "../../../lib/prismaClient";
+import prisma from "@/app/lib/prismaClient";
 import { Payout, ResultList } from "./route";
 
 export async function saveResultListData(

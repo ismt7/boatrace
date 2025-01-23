@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../lib/prisma";
+import prisma from "@/app/lib/prismaClient";
 import dayjs from "dayjs";
 import dotenv from "dotenv";
 import utc from "dayjs/plugin/utc";
@@ -10,14 +10,6 @@ dotenv.config();
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Tokyo");
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
 
 export async function OPTIONS() {
   return NextResponse.json({}, { status: 200 });
