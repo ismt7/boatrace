@@ -2,9 +2,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 import { JSDOM } from "jsdom";
-import { PrismaClient } from "../../../lib/prisma";
-
-const prisma = new PrismaClient();
+import prisma from "../../../lib/prismaClient";
 
 export interface RaceIndex {
   raceNumber: number;

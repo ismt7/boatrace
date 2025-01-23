@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Stadium } from "../lib/prisma";
 import { raceCourses } from "../boat/components/Odds/OddsHelpers";
 import "./scrollbar.css"; // カスタムスクロールバーのスタイルをインポート
+import RaceCourseButtonList from "../components/RaceCourseButtonList";
 
 function getHeatMapColor(value: number) {
   const percentage = value * 100;
@@ -17,12 +18,59 @@ function getHeatMapColor(value: number) {
   return "bg-white";
 }
 
+function HeatMapCell({ value }: { value: number }) {
+  return (
+    <td className={`border px-4 py-2 text-right ${getHeatMapColor(value)}`}>
+      {(value * 100).toFixed(2)}%
+    </td>
+  );
+}
+
+function StadiumTable({ stadiums }: { stadiums: Stadium[] }) {
+  return (
+    <table className="w-full max-w-4xl bg-white table-fixed mx-auto">
+      <thead>
+        <tr>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">コース</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">1着率</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">2着率</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">3着率</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">4着率</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">5着率</th>
+          <th className="py-2 whitespace-nowrap text-center w-1/7">6着率</th>
+        </tr>
+      </thead>
+      <tbody>
+        {stadiums.length === 0 ? (
+          <tr>
+            <td colSpan={7} className="border px-4 py-2 text-center">
+              表示するデータがありません
+            </td>
+          </tr>
+        ) : (
+          stadiums.map((stadium) => (
+            <tr key={stadium.id}>
+              <td className="border px-4 py-2">{stadium.course}</td>
+              <HeatMapCell value={stadium.first} />
+              <HeatMapCell value={stadium.second} />
+              <HeatMapCell value={stadium.third} />
+              <HeatMapCell value={stadium.fourth} />
+              <HeatMapCell value={stadium.fifth} />
+              <HeatMapCell value={stadium.sixth} />
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  );
+}
+
 export default function StadiumPage() {
   const [stadiums, setStadiums] = useState<Stadium[]>([]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const defaultJcd = raceCourses[0].id;
-  const jcd = searchParams.get("jcd") || defaultJcd;
+  const jcd = Number(searchParams.get("jcd")) || defaultJcd;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,82 +132,13 @@ export default function StadiumPage() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">ボートレース場</h1>
-      <div
-        className="flex mb-4 border-b overflow-x-auto custom-scrollbar"
-        ref={scrollRef}
-      >
-        {raceCourses.map((course) => (
-          <button
-            key={course.id}
-            className={`py-2 px-4 m-1 whitespace-nowrap ${
-              jcd === course.id.toString()
-                ? "border-b-2 border-blue-500 text-blue-500"
-                : "text-gray-700"
-            }`}
-            onClick={() => handleButtonClick(course.id)}
-          >
-            {course.name}
-          </button>
-        ))}
-      </div>
-      <table className="w-full max-w-4xl bg-white table-fixed mx-auto">
-        <thead>
-          <tr>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">コース</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">1着率</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">2着率</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">3着率</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">4着率</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">5着率</th>
-            <th className="py-2 whitespace-nowrap text-center w-1/7">6着率</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stadiums.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="border px-4 py-2 text-center">
-                表示するデータがありません
-              </td>
-            </tr>
-          ) : (
-            stadiums.map((stadium) => (
-              <tr key={stadium.id}>
-                <td className="border px-4 py-2">{stadium.course}</td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.first)}`}
-                >
-                  {(stadium.first * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.second)}`}
-                >
-                  {(stadium.second * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.third)}`}
-                >
-                  {(stadium.third * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.fourth)}`}
-                >
-                  {(stadium.fourth * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.fifth)}`}
-                >
-                  {(stadium.fifth * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`border px-4 py-2 text-right ${getHeatMapColor(stadium.sixth)}`}
-                >
-                  {(stadium.sixth * 100).toFixed(2)}%
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <RaceCourseButtonList
+        courses={raceCourses}
+        selectedId={jcd}
+        onClick={handleButtonClick}
+        scrollRef={scrollRef}
+      />
+      <StadiumTable stadiums={stadiums} />
     </div>
   );
 }

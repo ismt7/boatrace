@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { JSDOM } from "jsdom";
-import { PrismaClient } from "../../../lib/prisma";
-
-const prisma = new PrismaClient();
+import prisma from "../../../lib/prismaClient";
 
 export interface Stadium {
   jcd: number;
