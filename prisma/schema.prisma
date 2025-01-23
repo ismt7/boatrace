@@ -152,3 +152,18 @@ model Motor {
 
   @@unique([jcd, raceDate, toban, motorNumber])
 }
+
+model RacerCourseTrifectaRate {
+  id           Int      @id @default(autoincrement())
+  toban        Int
+  firstRate    Float
+  secondRate   Float
+  thirdRate    Float
+  fourthRate   Float
+  fifthRate    Float
+  sixthRate    Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([toban])
+}
